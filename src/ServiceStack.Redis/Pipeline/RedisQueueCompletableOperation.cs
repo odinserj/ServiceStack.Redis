@@ -9,7 +9,7 @@ namespace ServiceStack.Redis
     /// </summary>
     public class RedisQueueCompletableOperation
     {
-        internal readonly List<QueuedRedisOperation> QueuedCommands = new List<QueuedRedisOperation>();
+        internal readonly LinkedList<QueuedRedisOperation> QueuedCommands = new LinkedList<QueuedRedisOperation>();
 
         internal QueuedRedisOperation CurrentQueuedOperation;
 
@@ -29,7 +29,7 @@ namespace ServiceStack.Redis
 
         protected virtual void AddCurrentQueuedOperation()
         {
-            this.QueuedCommands.Add(CurrentQueuedOperation);
+            this.QueuedCommands.AddLast(CurrentQueuedOperation);
             CurrentQueuedOperation = null;
         }
 

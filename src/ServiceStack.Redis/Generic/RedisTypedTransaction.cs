@@ -45,7 +45,7 @@ namespace ServiceStack.Redis.Generic
         /// <param name="queued"></param>
         private void QueueExpectQueued()
         {
-            QueuedCommands.Insert(0, new QueuedRedisOperation()
+            QueuedCommands.AddFirst(new QueuedRedisOperation()
             {
                 VoidReadCommand = RedisClient.ExpectQueued
             });
@@ -70,7 +70,7 @@ namespace ServiceStack.Redis.Generic
                 _numCommands = QueuedCommands.Count / 2;
 
                 //insert multi command at beginning
-                QueuedCommands.Insert(0, new QueuedRedisCommand()
+                QueuedCommands.AddFirst(new QueuedRedisCommand()
                 {
                     VoidReturnCommand = r => Init(),
                     VoidReadCommand = RedisClient.ExpectOk,
@@ -79,14 +79,15 @@ namespace ServiceStack.Redis.Generic
 
                 //the first half of the responses will be "QUEUED",
                 // so insert reading of multiline after these responses
-                QueuedCommands.Insert(_numCommands + 1, new QueuedRedisOperation()
+                var middleNode = FindNthNode(QueuedCommands, _numCommands + 1);
+                QueuedCommands.AddBefore(middleNode, new QueuedRedisOperation()
                 {
                     IntReadCommand = RedisClient.ReadMultiDataResultCount,
                     OnSuccessIntCallback = handleMultiDataResultCount
                 });
 
                 // add Exec command at end (not queued)
-                QueuedCommands.Add(new RedisCommand()
+                QueuedCommands.AddLast(new RedisCommand()
                 {
                     VoidReturnCommand = r => Exec()
                 });
@@ -113,6 +114,21 @@ namespace ServiceStack.Redis.Generic
             }
             return rc;
         }
+
+        private LinkedListNode<TValue> FindNthNode<TValue>(LinkedList<TValue> linkedList, int n)
+        {
+            var current = linkedList.First;
+
+            for (var i = 0; i < n; i++)
+            {
+                if (current == null) break;
+
+                current = current.Next;
+            }
+
+            return current;
+        }
+
         /// <summary>
         /// callback for after result count is read in
         /// </summary>
